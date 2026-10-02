@@ -1,0 +1,34 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>3D 南山住宅 · Frozen V1</title>
+<style>html,body{margin:0;height:100%;overflow:hidden;background:#e9e4dc;font-family:system-ui,-apple-system,"PingFang SC",sans-serif}#c{width:100%;height:100%;display:block}.top{position:fixed;top:12px;left:12px;right:12px;display:flex;gap:8px;flex-wrap:wrap;z-index:4}.btn{border:0;border-radius:999px;padding:9px 13px;background:rgba(255,255,255,.92);box-shadow:0 3px 15px #0002;font-size:13px;color:#29251f}.btn.active{background:#302a24;color:white}.bottom{position:fixed;bottom:12px;left:12px;right:12px;background:rgba(255,255,255,.9);border-radius:14px;padding:10px 12px;z-index:4;font-size:12px;color:#514a42;box-shadow:0 3px 18px #0002}.badge{font-weight:700;color:#1d6b4a}.hint{opacity:.75}</style></head><body><canvas id="c"></canvas><div class="top" id="buttons"></div><div class="bottom"><span class="badge">Frozen V1</span> · 单指拖动环视 / 双指缩放。点击门可开关。客厅与三卧窗帘可切换。<span class="hint">绿色改墙方案、紫色通透轴、中间卧室铁艺床/屏风/飘窗按冻结规格执行。</span></div>
+<script type="importmap">{"imports":{"three":"https://unpkg.com/three@0.164.1/build/three.module.js","three/addons/":"https://unpkg.com/three@0.164.1/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';import {OrbitControls} from 'three/addons/controls/OrbitControls.js';import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const canvas=document.querySelector('#c'),renderer=new THREE.WebGLRenderer({canvas,antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.95;renderer.shadowMap.enabled=true;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0xe9e4dc);scene.fog=new THREE.Fog(0xe9e4dc,24,42);
+const camera=new THREE.PerspectiveCamera(48,1,.05,80);camera.position.set(18,17,18);const controls=new OrbitControls(camera,canvas);controls.enableDamping=true;controls.target.set(7.5,0,5.2);controls.maxPolarAngle=Math.PI*.49;controls.minDistance=2;controls.maxDistance=32;
+scene.add(new THREE.HemisphereLight(0xfff7e8,0x77716b,2.2));const sun=new THREE.DirectionalLight(0xfff0d8,3.2);sun.position.set(-7,14,-3);sun.castShadow=true;scene.add(sun);
+const root=new THREE.Group();root.rotation.x=-Math.PI/2;scene.add(root);let ceiling=[];
+new GLTFLoader().load('./House_Mobile_FROZEN_V1.glb',g=>{root.add(g.scene);g.scene.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;if(o.name.includes('Ceiling')) ceiling.push(o);if(o.name.startsWith('Door_'))o.visible=false}});setCeiling(false)});
+function setCeiling(v){ceiling.forEach(o=>o.visible=v)}
+// interactive doors: world coords x,z -> Three x,z, y vertical
+const doors=[];function door(name,x,z,w,angle=0){const pivot=new THREE.Group();pivot.position.set(x,0,z);const geo=new THREE.BoxGeometry(w,2.1,.055),mat=new THREE.MeshStandardMaterial({color:0xe1d9ca,roughness:.72});const leaf=new THREE.Mesh(geo,mat);leaf.position.set(w/2,1.05,0);leaf.castShadow=true;pivot.add(leaf);pivot.userData={kind:'door',open:false,base:angle};pivot.rotation.y=angle;scene.add(pivot);doors.push(pivot)}
+door('middleHidden',5.94,5.05,.82,0);door('middleToMaster',2.44,5.05,.82,0);door('master',4.3,3.79,.82,Math.PI/2);door('secondary',7.75,3.79,.82,Math.PI/2);
+// curtain groups, stylized warm beige panels
+const curtains=[];function curtain(x,z,w,rot=0){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=rot;const m=new THREE.MeshStandardMaterial({color:0xb8a38a,roughness:.95});for(const s of [-1,1]){const p=new THREE.Mesh(new THREE.BoxGeometry(w*.23,2.35,.07),m);p.position.set(s*w*.36,1.3,0);g.add(p)}g.userData={kind:'curtain',open:true,w};scene.add(g);curtains.push(g)}
+curtain(4.6,10.18,3.1);curtain(2.25,.3,2.8);curtain(6.05,.3,2.3);curtain(14.9,3.2,3.0,Math.PI/2);
+const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();canvas.addEventListener('pointerup',e=>{mouse.x=e.clientX/innerWidth*2-1;mouse.y=-(e.clientY/innerHeight*2-1);ray.setFromCamera(mouse,camera);const hits=ray.intersectObjects([...doors,...curtains],true);if(!hits.length)return;let o=hits[0].object;while(o.parent&&!o.userData.kind)o=o.parent;if(o.userData.kind==='door'){o.userData.open=!o.userData.open;o.rotation.y=o.userData.base+(o.userData.open?-Math.PI/2:0)}else if(o.userData.kind==='curtain'){o.userData.open=!o.userData.open;o.children.forEach((p,i)=>p.scale.x=o.userData.open?1:.9),o.children.forEach((p,i)=>p.position.x=(i?1:-1)*o.userData.w*(o.userData.open?.36:.15))}});
+const views={
+'全屋':[18,17,18,7.5,0,5.2,false],
+'客厅':[11.4,1.6,4.6,11.7,1.25,2.6,true],
+'餐厅':[12.5,1.6,8.7,11.2,1.2,7.2,true],
+'主卧':[2.4,1.6,4.65,2.3,1.1,2.4,true],
+'次卧':[6.0,1.6,4.55,6.1,1.05,2.5,true],
+'中间卧室':[3.0,1.6,5.65,6.2,1.0,8.0,true],
+'中卧→主卧':[4.0,1.6,6.1,2.2,1.0,4.7,true],
+'厨房':[12.8,1.6,8.3,10.4,1.0,9.4,true]
+};
+const bar=document.querySelector('#buttons');for(const [n,v] of Object.entries(views)){const b=document.createElement('button');b.className='btn'+(n==='全屋'?' active':'');b.textContent=n;b.onclick=()=>{document.querySelectorAll('.btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');camera.position.set(v[0],v[1],v[2]);controls.target.set(v[3],v[4],v[5]);controls.maxPolarAngle=v[6]?Math.PI*.85:Math.PI*.49;setCeiling(v[6]);controls.update()};bar.appendChild(b)}
+const topBtn=document.createElement('button');topBtn.className='btn';topBtn.textContent='顶部 开/关';topBtn.onclick=()=>{const on=ceiling.some(x=>x.visible);setCeiling(!on)};bar.appendChild(topBtn);
+function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}addEventListener('resize',resize);resize();
+renderer.setAnimationLoop(()=>{controls.update();renderer.render(scene,camera)});
+</script></body></html>

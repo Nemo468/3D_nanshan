@@ -1,0 +1,24 @@
+{
+  "version": "FROZEN_V1",
+  "dimensions_m": [
+    15.2,
+    10.4,
+    2.95
+  ],
+  "design_basis": "User-approved frozen specification, source PDF, latest green-wall scheme",
+  "middle_bedroom": {
+    "bed": "1.5x2.0 dark vintage wrought iron, right long side against wall",
+    "bay_window": "preserved + cream cushion",
+    "screen": "warm wood/rattan folding screen, mainly hides bed, preserve visual axis",
+    "wardrobe": "entry right + semi-clean clothes zone",
+    "green_wall": "merged with secondary-bedroom wall; doorway retained to master"
+  },
+  "mobile": {
+    "dollhouse": true,
+    "room_view_eye_height_m": 1.6,
+    "doors_clickable": true,
+    "selected_windows_clickable": true,
+    "main_curtains_clickable": true,
+    "ceiling_auto_toggle": true
+  }
+}
